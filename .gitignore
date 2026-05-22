@@ -45,3 +45,22 @@ files/
 # Configuration files with sensitive data
 **/application-prod.yml
 **/application-dev.yml
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+/dist
+
+# Vue/React build output
+build/
+dist/
+.next/
+nuxt/
+.nuxt/
+
+# Environment specific files
+.vuepress/dist
+coverage/
+*.local
