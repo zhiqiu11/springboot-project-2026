@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+/dist
+/build
+/.vite
+/.nuxt
+.next
+.nuxt
+.vuepress/dist
+.output
+
+# Environment variables
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Package manager
+.yarn/*
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor temporary files
+*.swp
+*.swo
+*~

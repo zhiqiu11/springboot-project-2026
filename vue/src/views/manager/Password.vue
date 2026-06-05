@@ -1,0 +1,76 @@
+<template>
+  <div class="card" style="width: 40%">
+    <el-form ref="formRef" :model="data.user" :rules="data.rules" label-width="80px" style="padding-right: 30px">
+      <el-form-item label="原密码" prop="password">
+        <el-input v-model="passwordForm.password" show-password autocomplete="off" />
+      </el-form-item>
+      <el-form-item label="新密码" prop="newPassword">
+        <el-input v-model="passwordForm.newPassword" show-password autocomplete="off" />
+      </el-form-item>
+      <el-form-item label="确认密码" prop="confirmPassword">
+        <el-input v-model="passwordForm.confirmPassword" show-password autocomplete="off" />
+      </el-form-item>
+      <div style="text-align: center">
+        <el-button type="primary" size="large" @click="updatePassword">保存</el-button>
+      </div>
+    </el-form>
+  </div>
+</template>
+
+<script setup>
+import {reactive, ref} from "vue";
+import request from "@/utils/request";
+import {ElMessage} from "element-plus";
+import router from "@/router";
+
+const formRef = ref()
+const data = reactive({
+  user: JSON.parse(localStorage.getItem('system-user') || '{}'),
+  rules: {
+    password: [
+      { required: true, message: '请输入原密码', trigger: 'blur' }
+    ],
+    newPassword: [
+      { required: true, message: '请输入新密码', trigger: 'blur' }
+    ],
+    confirmPassword: [
+      { required: true, message: '请确认新密码', trigger: 'blur' }
+    ],
+  }
+})
+
+// 密码修改专用表单，初始全为空
+const passwordForm = reactive({
+  password: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+function updatePassword() {
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    ElMessage.error("输入的密码不一致，请重新输入！")
+    return
+  }
+  // 提交时把用户 id 和密码一起传给后端
+  const params = {
+    id: data.user.id,
+    password: passwordForm.password,
+    newPassword: passwordForm.newPassword
+  }
+
+  request.put('/updatePassword', params).then(res => {
+    if (res.code === '200') {
+      ElMessage.success("更新成功")
+      logout()
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
+const logout = () => {
+  router.push('/login')
+  ElMessage.success('请重新登录')
+  localStorage.removeItem('system-user')
+}
+</script>
