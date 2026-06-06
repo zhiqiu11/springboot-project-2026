@@ -10,6 +10,7 @@ public class User extends Account{
     private String role;
     private String avatar;
     private BigDecimal account;
+    private String token;
 
     public Integer getId() {
         return id;
@@ -65,5 +66,13 @@ public class User extends Account{
 
     public void setAccount(BigDecimal account) {
         this.account = account;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

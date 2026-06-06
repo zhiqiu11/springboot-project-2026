@@ -55,6 +55,7 @@ import { reactive } from "vue";
 import router from "@/router";
 import {ElMessage} from "element-plus";
 import Footer from "@/components/Footer.vue";
+import request from "@/utils/request";
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('system-user') || '{}'),
@@ -74,9 +75,15 @@ if (!data.user?.id) {
 }
 
 const logout = () => {
-  localStorage.removeItem('system-user')
-  router.push('/login')
-  ElMessage.success('退出成功')
+  request.post('/logout', { token: data.user.token }).then(res => {
+    localStorage.removeItem('system-user')
+    router.push('/login')
+    ElMessage.success('退出成功')
+  }).catch(() => {
+    localStorage.removeItem('system-user')
+    router.push('/login')
+    ElMessage.success('退出成功')
+  })
 }
 
 // 更新Front里面的user对象为最新值

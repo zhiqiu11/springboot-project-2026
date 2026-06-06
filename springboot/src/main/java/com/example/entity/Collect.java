@@ -4,6 +4,12 @@ import java.math.BigDecimal;
 
 public class Collect {
 
+    public Collect() {}
+
+    public Collect(Integer userId) {
+        this.userId = userId;
+    }
+
     /**ID */
     private Integer id;
     /**商品ID */

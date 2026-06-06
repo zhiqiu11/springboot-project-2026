@@ -222,20 +222,6 @@ const save = () => {
   })
 }
 
-// 删除
-const handleDelete = (id) => {
-  ElMessageBox.confirm('删除后数据无法恢复，您确定删除吗?', '删除确认', { type: 'warning' }).then(res => {
-    request.delete('/orders/delete/' + id).then(res => {
-      if (res.code === '200') {
-        load()
-        ElMessage.success('操作成功')
-      } else {
-        ElMessage.error(res.msg)
-      }
-    })
-  }).catch(err => {})
-}
-
 </script>
 
 <style scoped>

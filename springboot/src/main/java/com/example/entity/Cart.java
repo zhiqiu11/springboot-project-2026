@@ -5,6 +5,12 @@ import java.util.function.BiFunction;
 
 public class Cart {
 
+    public Cart() {}
+
+    public Cart(Integer userId) {
+        this.userId = userId;
+    }
+
     /**主键ID */
     private Integer id;
     /**商品ID */

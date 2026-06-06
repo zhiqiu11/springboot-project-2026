@@ -7,6 +7,7 @@ import com.example.entity.Goods;
 import com.example.exception.CustomException;
 import com.example.mapper.CartMapper;
 import com.example.mapper.GoodsMapper;
+import com.example.utils.RedisUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
@@ -15,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 业务处理
@@ -26,6 +28,10 @@ public class GoodsService {
     private GoodsMapper goodsMapper;
     @Resource
     CartMapper cartMapper;
+    @Resource
+    private RedisUtils redisUtils;
+
+    private static final String GOODS_CACHE_PREFIX = "goods:";
     /**
      * 新增
      */
@@ -46,6 +52,8 @@ public class GoodsService {
         goodsMapper.deleteById(id);
         // 再删除商品
         cartMapper.deleteByGoodsId(id);
+        // 删除缓存
+        redisUtils.delete(GOODS_CACHE_PREFIX + id);
     }
 
     /**
@@ -53,6 +61,8 @@ public class GoodsService {
      */
     public void updateById(Goods goods) {
         goodsMapper.updateById(goods);
+        // 删除缓存
+        redisUtils.delete(GOODS_CACHE_PREFIX + goods.getId());
         // 下架删除购物车中的商品
         if (("下架").equals(goods.getStatus())) {
             cartMapper.deleteByGoodsId(goods.getId());
@@ -60,10 +70,22 @@ public class GoodsService {
     }
 
     /**
-     * 根据ID查询
+     * 根据ID查询（带缓存）
      */
     public Goods selectById(Integer id) {
-        return goodsMapper.selectById(id);
+        String cacheKey = GOODS_CACHE_PREFIX + id;
+        // 先查缓存
+        Object cachedGoods = redisUtils.get(cacheKey);
+        if (cachedGoods != null) {
+            return (Goods) cachedGoods;
+        }
+        // 缓存未命中，查数据库
+        Goods goods = goodsMapper.selectById(id);
+        if (goods != null) {
+            // 写入缓存，设置过期时间为1小时（可根据实际情况调整）
+            redisUtils.set(cacheKey, goods, 1, TimeUnit.HOURS);
+        }
+        return goods;
     }
 
     /**

@@ -22,6 +22,8 @@ public class WebController {
     @Resource
     private UserService userService;
     @Resource
+    private TokenService tokenService;
+    @Resource
     OrdersService ordersService;
     @Resource
     GoodsService goodsService;
@@ -42,17 +44,51 @@ public class WebController {
      */
     @PostMapping("/login")
     public Result login(@RequestBody Account account) {
-        Account ac = null;
         if ("管理员".equals(account.getRole())) {
-            ac = adminService.login(account);
+            Admin admin = (Admin) adminService.login(account);
+            return Result.success(admin);
         }
         if ("普通用户".equals(account.getRole())) {
-            ac = userService.login(account);
+            User user = (User) userService.login(account);
+            String token = tokenService.generateToken(user);
+            user.setToken(token);
+            return Result.success(user);
         }
-        if(ac == null){
-            return Result.error("登录失败，用户不存在");
+        return Result.error("登录失败，用户不存在");
+    }
+
+    /**
+     * 验证Token
+     */
+    @GetMapping("/validateToken")
+    public Result validateToken(@RequestHeader(value = "token", required = false) String token) {
+        User user = tokenService.validateToken(token);
+        if (user != null) {
+            return Result.success(user);
         }
-        return Result.success(ac);
+        return Result.error("Token无效或已过期");
+    }
+
+    /**
+     * 登出（支持 header 和 body 两种方式传 token）
+     */
+    @PostMapping("/logout")
+    public Result logout(
+            @RequestHeader(value = "token", required = false) String headerToken,
+            @RequestBody(required = false) Map<String, String> body) {
+        
+        String token = headerToken;
+        if (token == null || token.isEmpty()) {
+            if (body != null && body.containsKey("token")) {
+                token = body.get("token");
+            }
+        }
+        
+        if (token == null || token.isEmpty()) {
+            return Result.error("请先登录");
+        }
+        tokenService.invalidateToken(token);
+        return Result.success("登出成功");
     }
 
     /**

@@ -3,9 +3,6 @@
     <div class="card">
       <!-- 购物车列表 -->
       <div style="margin-bottom: 5px">
-        <div style="margin-bottom: 10px">
-          <el-button type="primary" @click="handleAdd">新增</el-button>
-        </div>
         <el-table :data="data.tableData" stripe @selection-change="handleSelectionChange">
           <el-table-column type="selection" width="55" />
           <el-table-column label="商品图片">
@@ -30,7 +27,7 @@
           <el-table-column label="操作" align="center" width="160">
             <template #default="scope">
               <el-button type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-              <el-button type="danger" @click="handleDelete(scope.row.id)">删除</el-button>
+              <el-button type="danger" @click="handleDelete(scope.row)">删除</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -105,14 +102,19 @@ const addOrder = () => {
   }
   formRef.value.validate(valid => {
     if (valid) {
-      // 检查配送类型是否选择
+      // 构造 cartList：从选中的行中提取 goodsId 和 num
+      const cartList = data.selectedRows.map(row => ({
+        goodsId: row.goodsId,
+        num: row.num
+      }))
       data.form.userId = data.user.id
-      data.form.cartList = [{goodsId: data.id, num: data.num}]
+      data.form.cartList = cartList   // 使用正确的列表
+
       request.post('/orders/add', data.form).then(res => {
         if (res.code === '200') {
           ElMessage.success('下单成功')
           data.formVisible = false
-          load()
+          load()  // 刷新购物车（通常下单后应清空已下单的商品）
         } else {
           ElMessage.error(res.msg)
         }
@@ -145,9 +147,8 @@ const handleSelectionChange = (rows) => {
   calculateTotal()
 }
 
-// 分页查询
 const load = () => {
-  request.get('/cart/selectAll', {
+  request.get('/cart/selectByUserId', {
     params: {
       userId: data.user.id,
     }
@@ -156,12 +157,6 @@ const load = () => {
   })
 }
 load()
-
-// 新增
-const handleAdd = () => {
-  data.form = {}
-  data.formVisible = true
-}
 
 // 编辑
 const handleEdit = (row) => {
@@ -184,7 +179,13 @@ const add = () => {
 
 // 编辑保存
 const update = () => {
-  request.put('/cart/update', data.form).then(res => {
+  request.put('/cart/updateNum', null, {
+    params: {
+      userId: data.user.id,
+      goodsId: data.form.goodsId,
+      num: data.form.num
+    }
+  }).then(res => {
     if (res.code === '200') {
       ElMessage.success('操作成功')
     } else {
@@ -204,9 +205,14 @@ const save = () => {
 }
 
 // 删除
-const handleDelete = (id) => {
+const handleDelete = (row) => {
   ElMessageBox.confirm('您确定删除吗?', '删除确认', { type: 'warning' }).then(res => {
-    request.delete('/cart/delete/' + id).then(res => {
+    request.delete('/cart/delete', {
+      params: {
+        userId: data.user.id,
+        goodsId: row.goodsId
+      }
+    }).then(res => {
       if (res.code === '200') {
         load()
         ElMessage.success('操作成功')

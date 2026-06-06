@@ -40,6 +40,15 @@ public interface CartMapper {
     @Select("select * from cart where goods_id = #{goodsId} and user_id = #{userId}")
     Cart selectByGoodsIdAndUserId(@Param("goodsId") Integer goodsId, @Param("userId") Integer userId);
 
+    @Select("select * from cart where goods_id = #{goodsId} and user_id = #{userId}")
+    List<Cart> selectListByGoodsIdAndUserId(@Param("goodsId") Integer goodsId, @Param("userId") Integer userId);
+
+    @Delete("delete from cart where goods_id = #{goodsId} and user_id = #{userId}")
+    void deleteByGoodsIdAndUserId(@Param("goodsId") Integer goodsId, @Param("userId") Integer userId);
+
+    @Delete("delete from cart where user_id = #{userId}")
+    void deleteByUserId(@Param("userId") Integer userId);
+
     @Delete("delete from cart where goods_id = #{id}")
     void deleteByGoodsId(Integer id);
 }

@@ -64,3 +64,8 @@ nuxt/
 .vuepress/dist
 coverage/
 *.local
+
+# Editor temporary files
+*.swp
+*.swo
+*~

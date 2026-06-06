@@ -103,6 +103,7 @@
 import { reactive } from "vue";
 import router from "@/router";
 import {ElMessage} from "element-plus";
+import request from "@/utils/request";
 
 const data = reactive({
   user: JSON.parse(localStorage.getItem('system-user') || '{}')
@@ -118,9 +119,15 @@ const updateUser = () => {
 }
 
 const logout = () => {
-  router.push('/login')
-  ElMessage.success('退出成功')
-  localStorage.removeItem('system-user')
+  request.post('/logout', { token: data.user.token }).then(res => {
+    router.push('/login')
+    ElMessage.success('退出成功')
+    localStorage.removeItem('system-user')
+  }).catch(() => {
+    router.push('/login')
+    ElMessage.success('退出成功')
+    localStorage.removeItem('system-user')
+  })
 }
 </script>
 

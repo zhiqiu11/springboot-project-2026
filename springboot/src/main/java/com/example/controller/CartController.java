@@ -75,4 +75,42 @@ public class CartController {
         return Result.success(page);
     }
 
+    // ========== Redis优化接口 ==========
+
+    /**
+     * 根据用户ID查询购物车（Redis优先）
+     */
+    @GetMapping("/selectByUserId")
+    public Result selectByUserId(@RequestParam Integer userId) {
+        List<Cart> list = cartService.selectByUserId(userId);
+        return Result.success(list);
+    }
+
+    /**
+     * 根据用户ID和商品ID删除
+     */
+    @DeleteMapping("/delete")
+    public Result deleteByGoodsId(@RequestParam Integer userId, @RequestParam Integer goodsId) {
+        cartService.deleteByGoodsId(userId, goodsId);
+        return Result.success();
+    }
+
+    /**
+     * 更新数量
+     */
+    @PutMapping("/updateNum")
+    public Result updateNum(@RequestParam Integer userId, @RequestParam Integer goodsId, @RequestParam Integer num) {
+        cartService.updateNum(userId, goodsId, num);
+        return Result.success();
+    }
+
+    /**
+     * 删除用户所有购物车
+     */
+    @DeleteMapping("/deleteByUserId/{userId}")
+    public Result deleteByUserId(@PathVariable Integer userId) {
+        cartService.deleteByUserId(userId);
+        return Result.success();
+    }
+
 }

@@ -178,6 +178,11 @@ const addOrder = () => {
 
 //加入购物车
 const addCart = () => {
+  // 添加参数校验
+  if (!data.id || !data.user.id) {
+    ElMessage.error('参数错误')
+    return
+  }
   request.post('/cart/add', {
     userId: data.user.id,
     goodsId: data.id,
