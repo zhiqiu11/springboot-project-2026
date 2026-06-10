@@ -1,6 +1,6 @@
 package com.example.controller;
 
-import com.example.common.Result;
+import com.example.common.config.Result;
 import com.example.entity.Carousel;
 import com.example.service.CarouselService;
 import com.github.pagehelper.PageInfo;

@@ -48,15 +48,20 @@
 
   const formRef = ref()
 
-  // 点击登录按钮的时候会触发这个方法
   const login = () => {
     formRef.value.validate((valid => {
       if (valid) {
-        // 调用后台的接口
         request.post('/login', data.form).then(res => {
           if (res.code === '200') {
             ElMessage.success("登录成功")
+            // 保存用户信息和 token
             localStorage.setItem('system-user', JSON.stringify(res.data))
+            // 单独存储 token（方案A）
+            if (res.data.token) {
+              localStorage.setItem('load_token', res.data.token)
+            } else {
+              console.error('后端未返回 token 字段', res.data)
+            }
             if (res.data.role === "管理员") {
               router.push('/manager/home')
               ElMessage.success("管理员登录")

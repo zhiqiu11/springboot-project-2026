@@ -130,7 +130,9 @@ const load = () => {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
       orderNo: data.orderNo,
-      goodsName: data.goodsName
+      goodsName: data.goodsName,
+      userId: data.user.id,
+      role: '普通用户'
     }
   }).then(res => {
     data.tableData = res.data?.list

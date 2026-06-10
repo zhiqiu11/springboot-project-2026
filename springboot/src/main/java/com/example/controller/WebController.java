@@ -3,10 +3,13 @@ package com.example.controller;
 import cn.hutool.core.date.DateField;
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
-import com.example.common.Result;
+import com.example.common.config.Result;
+import com.example.common.enums.ResultCodeEnum;
 import com.example.entity.*;
 import com.example.mapper.OrderDetailMapper;
+import com.example.common.enums.OrderStatusEnum;
 import com.example.service.*;
+import com.example.utils.SaUtils;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,15 +25,13 @@ public class WebController {
     @Resource
     private UserService userService;
     @Resource
-    private TokenService tokenService;
+    private OrdersService ordersService;
     @Resource
-    OrdersService ordersService;
+    private GoodsService goodsService;
     @Resource
-    GoodsService goodsService;
+    private CategoryService categoryService;
     @Resource
-    CategoryService categoryService;
-    @Resource
-    OrderDetailMapper orderDetailMapper;
+    private OrderDetailMapper orderDetailMapper;
     /**
      * 默认请求接口
      */
@@ -50,44 +51,31 @@ public class WebController {
         }
         if ("普通用户".equals(account.getRole())) {
             User user = (User) userService.login(account);
-            String token = tokenService.generateToken(user);
+            String token = SaUtils.loginAndGetToken(user.getId());
             user.setToken(token);
             return Result.success(user);
         }
-        return Result.error("登录失败，用户不存在");
+        return Result.error(ResultCodeEnum.LOGIN_FAILED);
     }
 
     /**
      * 验证Token
      */
     @GetMapping("/validateToken")
-    public Result validateToken(@RequestHeader(value = "token", required = false) String token) {
-        User user = tokenService.validateToken(token);
+    public Result validateToken() {
+        User user = SaUtils.getLoginUser();
         if (user != null) {
             return Result.success(user);
         }
-        return Result.error("Token无效或已过期");
+        return Result.error(ResultCodeEnum.TOKEN_EXPIRED);
     }
 
     /**
-     * 登出（支持 header 和 body 两种方式传 token）
+     * 登出
      */
     @PostMapping("/logout")
-    public Result logout(
-            @RequestHeader(value = "token", required = false) String headerToken,
-            @RequestBody(required = false) Map<String, String> body) {
-        
-        String token = headerToken;
-        if (token == null || token.isEmpty()) {
-            if (body != null && body.containsKey("token")) {
-                token = body.get("token");
-            }
-        }
-        
-        if (token == null || token.isEmpty()) {
-            return Result.error("请先登录");
-        }
-        tokenService.invalidateToken(token);
+    public Result logout() {
+        SaUtils.logout();
         return Result.success("登出成功");
     }
 
@@ -97,7 +85,7 @@ public class WebController {
     @PostMapping("/register")
     public Result register(@RequestBody User user) {
         if(!user.getPassword().equals(user.getNewPassword())) {
-            return Result.error("两次输入的密码不一致！请重新输入");
+            return Result.error(ResultCodeEnum.PASSWORD_NOT_MATCH);
         }
         userService.add(user);
         return Result.success();
@@ -122,7 +110,7 @@ public class WebController {
      */
     @GetMapping("/count")
     public Result count() {
-        List<Orders> ordersList = ordersService.selectAll(null).stream().filter(orders -> !orders.getStatus().equals("已取消")).toList();
+        List<Orders> ordersList = ordersService.selectAll(null).stream().filter(orders -> !orders.getStatus().equals(OrderStatusEnum.CANCEL.getDesc())).toList();
         String todayDate = DateUtil.today();
 
         BigDecimal total = ordersList.stream().map(Orders::getTotal).reduce(BigDecimal::add).orElse(BigDecimal.ZERO);
@@ -152,7 +140,7 @@ public class WebController {
         int year = DateUtil.year(date);
 
         ArrayList<BigDecimal> countList = new ArrayList<>();
-        List<Orders> ordersList = ordersService.selectAll(null).stream().filter(orders -> !orders.getStatus().equals("已取消")).toList();
+        List<Orders> ordersList = ordersService.selectAll(null).stream().filter(orders -> !orders.getStatus().equals(OrderStatusEnum.CANCEL.getDesc())).toList();
         for (String day : dateStringList) {
             //包含年月日的订单
             BigDecimal total = ordersList.stream().filter(orders -> orders.getTime().contains(String.valueOf(year)) && orders.getTime().contains(day))
@@ -180,13 +168,13 @@ public class WebController {
             for(OrderDetail orderDetail : orderDetailList){
                 Integer orderId = orderDetail.getOrderId();
                 Orders orders = ordersService.selectById(orderId);
-                if(!("已取消").equals(orders.getStatus())){
+                if(!(OrderStatusEnum.CANCEL.getDesc()).equals(orders.getStatus())){
                     Integer goodsId = orderDetail.getGoodsId();
                     Goods goods = goodsService.selectById(goodsId);
                     if(goods.getCategoryId().equals(category.getId())){
                         total = total.add(orders.getTotal());
                     }
-                };
+                }
             }
             map.put("value", total);
             //total大于0才添加到list

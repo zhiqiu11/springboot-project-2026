@@ -1,5 +1,6 @@
 package com.example.service;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import com.example.entity.Account;
@@ -7,6 +8,7 @@ import com.example.entity.Admin;
 import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.mapper.UserMapper;
+import com.example.utils.SaUtils;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
@@ -82,12 +84,17 @@ public class UserService {
 
     public void updatePassword(Account account) {
         User dbUser = userMapper.selectByUsername(account.getUsername());
-        if (ObjectUtil.isNull(dbUser)) {
-            throw new CustomException("用户不存在");
+
+        // 获取当前登录用户
+        User loginUser = SaUtils.getLoginUser();
+        // 如果是普通用户，需要验证原密码；如果是管理员，不需要验证
+        if (loginUser != null && "普通用户".equals(loginUser.getRole())) {
+            // 验证原密码
+            if (!account.getPassword().equals(dbUser.getPassword())) {
+                throw new CustomException("原密码错误");
+            }
         }
-        if (!account.getPassword().equals(dbUser.getPassword())) {
-            throw new CustomException("原密码错误");
-        }
+
         dbUser.setPassword(account.getNewPassword());
         userMapper.updateById(dbUser);
     }

@@ -1,6 +1,6 @@
 package com.example.controller;
 
-import com.example.common.Result;
+import com.example.common.config.Result;
 import com.example.entity.Collect;
 import com.example.service.CollectService;
 import com.github.pagehelper.PageInfo;

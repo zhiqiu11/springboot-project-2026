@@ -4,9 +4,11 @@ package com.example;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
-@SpringBootApplication//是@Configuration、@EnableAutoConfiguration、@ComponentScan三个注解的组合，作用为启动自动配置、组件扫描和配置类
+@SpringBootApplication
 @MapperScan("com.example.mapper")
+@EnableScheduling
 public class SpringbootApplication {
 
     public static void main(String[] args) {

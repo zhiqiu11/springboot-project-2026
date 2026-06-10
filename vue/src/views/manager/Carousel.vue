@@ -135,7 +135,7 @@ const add = () => {
       ElMessage.error(res.msg)
     }
   })
-}
+}//then为js中的异步操作，其内的代码会在post的逻辑执行完成后(无论成败)接着执行
 
 // 编辑保存
 const update = () => {

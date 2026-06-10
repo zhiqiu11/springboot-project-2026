@@ -33,6 +33,7 @@ public class CarouselService {
     public void add(Carousel carousel) {
         carouselMapper.insert(carousel);
         redisUtils.delete(CAROUSEL_CACHE_KEY);
+        //Cache-Aside（旁路缓存） 模式：修改数据库内容后，缓存中删除对应的键
     }
 
     /**

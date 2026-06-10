@@ -4,7 +4,10 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 @Component
 public class RedisUtils {
@@ -26,6 +29,18 @@ public class RedisUtils {
 
     public Boolean delete(String key) {
         return redisTemplate.delete(key);
+    }
+
+    public Long delete(List<String> keys) {
+        return redisTemplate.delete(keys);
+    }
+
+    public List<String> keys(String pattern) {
+        Set<String> keys = redisTemplate.keys(pattern);
+        if (keys == null) {
+            return List.of();
+        }
+        return keys.stream().collect(Collectors.toList());
     }
 
     public Boolean exists(String key) {

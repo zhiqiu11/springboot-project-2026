@@ -1,6 +1,6 @@
 package com.example.controller;
 
-import com.example.common.Result;
+import com.example.common.config.Result;
 import com.example.entity.Orders;
 import com.example.service.OrdersService;
 import com.github.pagehelper.PageInfo;
@@ -70,8 +70,9 @@ public class OrdersController {
     @GetMapping("/selectPage")
     public Result selectPage(Orders orders,
                              @RequestParam(defaultValue = "1") Integer pageNum,
-                             @RequestParam(defaultValue = "10") Integer pageSize) {
-        PageInfo<Orders> page = ordersService.selectPage(orders, pageNum, pageSize);
+                             @RequestParam(defaultValue = "10") Integer pageSize,
+                             @RequestParam(defaultValue = "普通用户") String role) {
+        PageInfo<Orders> page = ordersService.selectPage(orders, pageNum, pageSize, role);
         return Result.success(page);
     }
 

@@ -72,5 +72,6 @@ const logout = () => {
   router.push('/login')
   ElMessage.success('请重新登录')
   localStorage.removeItem('system-user')
+  localStorage.removeItem('load_token')
 }
 </script>

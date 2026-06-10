@@ -12,6 +12,7 @@
             <if test="orderNo != null"> and order_no like concat('%', #{orderNo}, '%')</if>
             <if test="goodsName != null"> and goods_name like concat('%', #{goodsName}, '%')</if>
             <if test="userId != null"> and orders.user_id = #{userId}</if>
+            <if test="status != null"> and orders.status = #{status}</if>
         </where>
         group by orders.id
         order by orders.id desc

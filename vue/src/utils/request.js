@@ -11,6 +11,12 @@ const request = axios.create({
 // 可以自请求发送前对请求做一些处理
 request.interceptors.request.use(config => {
     config.headers['Content-Type'] = 'application/json;charset=utf-8';
+    // 方案A：直接从 localStorage 读取 token
+    const token = localStorage.getItem('load_token')
+    if (token) {
+      config.headers['load_token'] = token
+    }
+    console.log('发送的 load_token:', config.headers['load_token']);  // 查看发送的 token
     return config
 }, error => {
     return Promise.reject(error)
@@ -34,6 +40,7 @@ request.interceptors.response.use(
             ElMessage.error(res.msg);
             router.push("/login")
         }
+        console.log(res);
         return res;
     },
     error => {

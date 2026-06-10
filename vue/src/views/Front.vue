@@ -77,10 +77,12 @@ if (!data.user?.id) {
 const logout = () => {
   request.post('/logout', { token: data.user.token }).then(res => {
     localStorage.removeItem('system-user')
+    localStorage.removeItem('load_token')
     router.push('/login')
     ElMessage.success('退出成功')
   }).catch(() => {
     localStorage.removeItem('system-user')
+    localStorage.removeItem('load_token')
     router.push('/login')
     ElMessage.success('退出成功')
   })

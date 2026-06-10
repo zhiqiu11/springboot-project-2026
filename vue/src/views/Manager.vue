@@ -123,10 +123,12 @@ const logout = () => {
     router.push('/login')
     ElMessage.success('退出成功')
     localStorage.removeItem('system-user')
+    localStorage.removeItem('load_token')
   }).catch(() => {
     router.push('/login')
     ElMessage.success('退出成功')
     localStorage.removeItem('system-user')
+    localStorage.removeItem('load_token')
   })
 }
 </script>

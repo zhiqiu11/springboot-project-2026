@@ -1,6 +1,6 @@
 package com.example.controller;
 
-import com.example.common.Result;
+import com.example.common.config.Result;
 import com.example.utils.RedisUtils;
 import org.springframework.web.bind.annotation.*;
 

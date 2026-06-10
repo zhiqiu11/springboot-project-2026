@@ -115,7 +115,8 @@ const load = () => {
     params: {
       pageNum: data.pageNum,
       pageSize: data.pageSize,
-      orderNo: data.orderNo
+      orderNo: data.orderNo,
+      role: '管理员'
     }
   }).then(res => {
     data.tableData = res.data?.list
