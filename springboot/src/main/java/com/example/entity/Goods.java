@@ -32,6 +32,19 @@ public class Goods {
     private String time;
     /**推荐状态 */
     private String recommend;
+    // ========== 秒杀/团购新增字段 ==========
+    /**是否秒杀（是/否） */
+    private String hasFlash;
+    /**是否团购（是/否） */
+    private String hasGroup;      //
+    /**秒杀剩余名额 */
+    private Integer flashNum;
+    /**秒杀价格 */
+    private BigDecimal flashPrice;
+    /**秒杀结束时间 */
+    private String flashTime;
+    // ========== 非数据库字段（仅前端展示） ==========
+    private transient Long maxTime;        // 剩余秒数（用于倒计时）
 
     public String getRecommend() {
         return recommend;
@@ -143,5 +156,54 @@ public class Goods {
 
     public void setTime(String time) {
         this.time = time;
+    }
+
+
+    public String getHasFlash() {
+        return hasFlash;
+    }
+
+    public void setHasFlash(String hasFlash) {
+        this.hasFlash = hasFlash;
+    }
+
+    public String getHasGroup() {
+        return hasGroup;
+    }
+
+    public void setHasGroup(String hasGroup) {
+        this.hasGroup = hasGroup;
+    }
+
+    public Integer getFlashNum() {
+        return flashNum;
+    }
+
+    public void setFlashNum(Integer flashNum) {
+        this.flashNum = flashNum;
+    }
+
+    public BigDecimal getFlashPrice() {
+        return flashPrice;
+    }
+
+    public void setFlashPrice(BigDecimal flashPrice) {
+        this.flashPrice = flashPrice;
+    }
+
+    public String getFlashTime() {
+        return flashTime;
+    }
+
+    public void setFlashTime(String flashTime) {
+        this.flashTime = flashTime;
+    }
+
+    public Long getMaxTime() {
+        return maxTime;
+    }
+
+    public void setMaxTime(Long maxTime) {
+        this.maxTime = maxTime;
     }
 }

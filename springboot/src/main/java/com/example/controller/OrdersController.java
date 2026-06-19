@@ -1,8 +1,13 @@
 package com.example.controller;
 
 import com.example.common.config.Result;
+import com.example.common.enums.RoleEnum;
+import com.example.entity.Cart;
+import com.example.entity.OrderDetail;
 import com.example.entity.Orders;
+import com.example.service.GroupService;
 import com.example.service.OrdersService;
+import com.example.service.SeckillService;
 import com.github.pagehelper.PageInfo;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
@@ -19,12 +24,36 @@ public class OrdersController {
     @Resource
     private OrdersService ordersService;
 
+    @Resource
+    private SeckillService seckillService;
+
+    @Resource
+    private GroupService groupService;
+
     /**
      * 新增
      */
     @PostMapping("/add")
     public Result add(@RequestBody Orders orders) {
         ordersService.add(orders);
+        return Result.success();
+    }
+
+    /**
+     * 新增秒杀订单
+     */
+    @PostMapping("/addFlashOrder")
+    public Result addFlashOrder(@RequestBody Orders orders) {
+        seckillService.addFlashOrder(orders);
+        return Result.success();
+    }
+
+    /**
+     * 新增团购订单
+     */
+    @PostMapping("/addGroupOrder")
+    public Result addGroupOrder(@RequestBody Orders orders) {
+        groupService.addGroupOrder(orders);
         return Result.success();
     }
 
@@ -71,7 +100,7 @@ public class OrdersController {
     public Result selectPage(Orders orders,
                              @RequestParam(defaultValue = "1") Integer pageNum,
                              @RequestParam(defaultValue = "10") Integer pageSize,
-                             @RequestParam(defaultValue = "普通用户") String role) {
+                              @RequestParam(defaultValue = "USER") String role) {
         PageInfo<Orders> page = ordersService.selectPage(orders, pageNum, pageSize, role);
         return Result.success(page);
     }

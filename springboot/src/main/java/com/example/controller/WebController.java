@@ -5,6 +5,7 @@ import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
 import com.example.common.config.Result;
 import com.example.common.enums.ResultCodeEnum;
+import com.example.common.enums.RoleEnum;
 import com.example.entity.*;
 import com.example.mapper.OrderDetailMapper;
 import com.example.common.enums.OrderStatusEnum;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.*;
+
 
 
 @RestController
@@ -45,13 +47,15 @@ public class WebController {
      */
     @PostMapping("/login")
     public Result login(@RequestBody Account account) {
-        if ("管理员".equals(account.getRole())) {
+        if (RoleEnum.ADMIN.name().equals(account.getRole())) {
             Admin admin = (Admin) adminService.login(account);
+            String token = SaUtils.loginAndGetToken(admin.getId(), admin.getRole());  // 添加这一行
+            admin.setToken(token);
             return Result.success(admin);
         }
-        if ("普通用户".equals(account.getRole())) {
+        if (RoleEnum.USER.name().equals(account.getRole())) {
             User user = (User) userService.login(account);
-            String token = SaUtils.loginAndGetToken(user.getId());
+            String token = SaUtils.loginAndGetToken(user.getId(), user.getRole());
             user.setToken(token);
             return Result.success(user);
         }
@@ -63,9 +67,16 @@ public class WebController {
      */
     @GetMapping("/validateToken")
     public Result validateToken() {
-        User user = SaUtils.getLoginUser();
-        if (user != null) {
-            return Result.success(user);
+        if(RoleEnum.USER.name().equals(SaUtils.getLoginRole())){
+            User user = SaUtils.getLoginUser();
+            if (user != null) {
+                return Result.success(user);
+            }
+        } else if(RoleEnum.ADMIN.name().equals(SaUtils.getLoginRole())){
+            Admin admin = SaUtils.getLoginAdmin();
+            if (admin != null) {
+                return Result.success(admin);
+            }
         }
         return Result.error(ResultCodeEnum.TOKEN_EXPIRED);
     }
@@ -96,10 +107,10 @@ public class WebController {
      */
     @PutMapping("/updatePassword")
     public Result updatePassword(@RequestBody Account account) {
-        if ("管理员".equals(account.getRole())) {
+        if (RoleEnum.ADMIN.name().equals(account.getRole())) {
             adminService.updatePassword(account);
         }
-        if ("普通用户".equals(account.getRole())) {
+        if (RoleEnum.USER.name().equals(account.getRole())) {
             userService.updatePassword(account);
         }
         return Result.success();

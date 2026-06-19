@@ -10,10 +10,10 @@
           <el-input :prefix-icon="Lock" size="large" v-model="data.form.password" placeholder="请输入密码" show-password />
         </el-form-item>
         <el-form-item prop="role">
-          <el-select size="large" style="width: 100%" v-model="data.form.role">
-            <el-option value="普通用户" label="普通用户"></el-option>
-            <el-option value="管理员" label="管理员"></el-option>
-          </el-select>
+           <el-select size="large" style="width: 100%" v-model="data.form.role">
+             <el-option value="ADMIN" label="管理员"></el-option>
+             <el-option value="USER" label="普通用户"></el-option>
+           </el-select>
         </el-form-item>
         <el-form-item>
           <el-button size="large" type="primary" style="width: 100%" @click="login">登 录</el-button>
@@ -35,7 +35,7 @@
   import router from "@/router";
 
   const data = reactive({
-    form: { role: '管理员' },
+         form: { role: 'ADMIN' },
     rules: {
       username: [
         { required: true, message: '请输入账号', trigger: 'blur' },
@@ -58,16 +58,17 @@
             localStorage.setItem('system-user', JSON.stringify(res.data))
             // 单独存储 token（方案A）
             if (res.data.token) {
-              localStorage.setItem('load_token', res.data.token)
+              localStorage.setItem(`token_${res.data.role}_${res.data.id}`, res.data.token)
+              // 将当前 Tab 的身份写入 sessionStorage（Tab 隔离，多 Tab 不互扰）
+              sessionStorage.setItem('currentRole', res.data.role)
+              sessionStorage.setItem('currentId', res.data.id)
             } else {
               console.error('后端未返回 token 字段', res.data)
             }
-            if (res.data.role === "管理员") {
+            if (res.data.role === "ADMIN") {
               router.push('/manager/home')
-              ElMessage.success("管理员登录")
             } else {
               router.push('/front/home')
-              ElMessage.success("用户登录")
             }
           } else {
             ElMessage.error(res.msg)

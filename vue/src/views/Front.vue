@@ -14,6 +14,7 @@
             <el-menu-item index="/front/goods">精选商品</el-menu-item>
             <el-menu-item index="/front/cart">购物车</el-menu-item>
             <el-menu-item index="/front/userOrders">商品订单</el-menu-item>
+            <el-menu-item index="/front/flash">秒杀专区</el-menu-item>
           </el-menu>
         </div>
         <div style="width: fit-content" v-if="router.currentRoute.value.path === '/front/home'">
@@ -77,12 +78,16 @@ if (!data.user?.id) {
 const logout = () => {
   request.post('/logout', { token: data.user.token }).then(res => {
     localStorage.removeItem('system-user')
-    localStorage.removeItem('load_token')
+    localStorage.removeItem(`token_${data.user.role}_${data.user.id}`)
+    sessionStorage.removeItem('currentRole')
+    sessionStorage.removeItem('currentId')
     router.push('/login')
     ElMessage.success('退出成功')
   }).catch(() => {
     localStorage.removeItem('system-user')
-    localStorage.removeItem('load_token')
+    localStorage.removeItem(`token_${data.user.role}_${data.user.id}`)
+    sessionStorage.removeItem('currentRole')
+    sessionStorage.removeItem('currentId')
     router.push('/login')
     ElMessage.success('退出成功')
   })

@@ -11,7 +11,7 @@
         <!-- 下拉订单详情页 -->
         <el-table-column type="expand">
           <template #default="props">
-            <div style="padding: 10px">
+            <div style="padding: 10px" @click="router.push('/ordersDetail?id=' + props.row.id)">
               <el-table :data="props.row.orderDetailList" stripe border >
                 <el-table-column prop="goodsImg" label="商品图片" width="100px">
                   <template #default="scope">
@@ -50,20 +50,22 @@
         </el-table-column>
         <el-table-column prop="status" label="状态">
           <template #default="scope">
-            <el-tag type="danger" v-if="scope.row.status === '已取消'">已取消</el-tag>
+            <el-tag type="primary" v-if="scope.row.status === '待支付'">待支付</el-tag>
             <el-tag type="warning" v-else-if="scope.row.status === '待接单'">待接单</el-tag>
             <el-tag type="info" v-else-if="scope.row.status === '已配送'">已配送</el-tag>
             <el-tag type="info" v-else-if="scope.row.status === '已出货'">已出货</el-tag>
             <el-tag type="success" v-else-if="scope.row.status === '已完成'">已完成</el-tag>
+            <el-tag type="danger" v-else-if="scope.row.status === '已取消'">已取消</el-tag>
             <el-tag type="primary" v-else>{{ scope.row.status || '-' }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column prop="time" label="下单时间"></el-table-column>
         <el-table-column prop="address" label="配送地址" width="150px"></el-table-column>
         <el-table-column prop="deliver" label="配送信息" width="150px"></el-table-column>
-        <el-table-column label="订单操作" align="center" width="150">
+        <el-table-column label="订单操作" align="center" width="250">
           <template #default="scope">
-            <el-button type="danger" v-if="scope.row.status === '待接单'" @click="handleCancel(scope.row)">取消订单</el-button>
+            <el-button @click="handleCancel(scope.row)" type="danger" v-if="scope.row.status !== '已完成' && scope.row.status !== '已取消'" >取消订单</el-button>
+            <el-button @click="handlePay(scope.row)" type="danger" v-if="scope.row.status === '待支付'" >前去付款</el-button>
             <el-button @click="handleConfirm(scope.row)" type="primary" v-if="scope.row.status === '已出货' || scope.row.status === '已配送'">确认收货</el-button>
           </template>
         </el-table-column>
@@ -100,6 +102,7 @@
 import request from "@/utils/request";
 import {reactive, ref} from "vue";
 import {ElMessageBox, ElMessage} from "element-plus";
+import router from "@/router";
 
 const formRef = ref()
 
@@ -132,7 +135,7 @@ const load = () => {
       orderNo: data.orderNo,
       goodsName: data.goodsName,
       userId: data.user.id,
-      role: '普通用户'
+      role: 'USER'
     }
   }).then(res => {
     data.tableData = res.data?.list
@@ -145,11 +148,19 @@ load()
 const handleCancel = (row) => {
   ElMessageBox.confirm('您确定确认取消订单吗?', '同意确认', { type: 'warning' }).then(res => {
     data.form = row
-    data.form.status = '已取消'
+    if (row.status === '待支付'){
+      data.form.status = '已取消'
+    } else {
+      data.form.status = '已退款'
+    }
     updateOrder()
   }).catch(err => {
     console.log(err)
   })
+}
+
+const handlePay = (row) => {
+  router.push('/ordersDetail?id=' + row.id)
 }
 
 // 确认收货

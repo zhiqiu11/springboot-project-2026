@@ -1,0 +1,85 @@
+<template>
+  <div class="front-container" style="width: 50%;">
+    <div class="card" style="padding: 20px;display: flex;grid-gap: 20px;margin-bottom: 20px;">
+      <el-row :gutter="10">
+        <img :src="data.ordersData.goodsImg" alt="" style="width: 150px; height: 150px; border-radius: 10px; border: 1px solid #cccccc">
+        <el-col :span="20" style="flex:1">
+          <div style="font-size: 20px; font-weight: bold; border-bottom: 10px; line-height: 30px">{{ data.ordersData.goodsName }}</div>
+          <div style="margin-top: 15px; font-size: 15px">订单编号： {{ data.ordersData.orderNo }}</div>
+          <div style="margin-top: 15px; font-size: 15px">创建时间： {{ data.ordersData.createTime }}</div>
+          <div style="margin-top: 15px; font-size: 15px" v-if="data.ordersData.status === '待支付'">支付状态：
+            <el-tag type="danger">待支付</el-tag>
+          </div>
+          <div style="margin-top: 15px; font-size: 15px">商品价格： ￥{{ data.ordersData.goodsPrice }}</div>
+          <div style="margin-top: 15px; font-size: 15px">购买数量： {{ data.ordersData.num }}</div>
+          <div style="margin-top: 15px; font-size: 15px">订单总价： <span style="font-size: 18px; color: red">￥{{ data.ordersData.total }}</span></div>
+          <div style="margin-top: 15px">
+            <el-button v-if="data.ordersData.status === '待支付'" type="primary" style="padding: 20px 30px;margin-left: 5px" @click="pay">去支付</el-button>
+            <el-button v-else-if="data.ordersData.status === '已取消'" :disabled="true" type="danger" style="padding: 20px 30px;margin-left: 5px">已取消</el-button>
+            <el-button  v-else :disabled="true" type="success" style="padding: 20px 30px; margin-left: 5px">已付款</el-button>
+          </div>
+        </el-col>
+      </el-row>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import {reactive, onMounted} from "vue";
+import request from "@/utils/request.js";
+import {ElMessage} from "element-plus";
+import router from "@/router/index.js";
+
+const data = reactive({
+  ordersId: router.currentRoute.value.query.id,
+  ordersData: {}
+})
+
+const loadOrders = () => {
+  request.get('/orders/selectById/' + data.ordersId).then(res => {
+    if (res.code === '200') {
+      data.ordersData = res.data
+
+      // 取出订单详情（第一个商品）
+      const detail = data.ordersData.orderDetailList?.[0] || {}
+      // 把详情信息合并到 ordersData 中
+      data.ordersData = {
+        ...data.ordersData,
+        goodsImg: detail.goodsImg,
+        goodsName: detail.goodsName,
+        goodsPrice: detail.goodsPrice,
+        num: detail.num
+      }
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+const pay = () => {
+  request.post('/userPay/pay', {
+    id: data.ordersData.id,
+    total: data.ordersData.total,
+    status: data.ordersData.status,
+    userId: data.ordersData.userId
+  }).then(res => {
+    if (res.code === '200') {
+      ElMessage.success('支付成功')
+      loadOrders()  // 刷新订单状态
+    } else {
+      ElMessage.error(res.msg)
+    }
+  })
+}
+
+
+loadOrders()
+
+</script>
+
+<style scope>
+.overflow {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis
+}
+</style>

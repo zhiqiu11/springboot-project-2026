@@ -11,8 +11,17 @@ const request = axios.create({
 // 可以自请求发送前对请求做一些处理
 request.interceptors.request.use(config => {
     config.headers['Content-Type'] = 'application/json;charset=utf-8';
-    // 方案A：直接从 localStorage 读取 token
-    const token = localStorage.getItem('load_token')
+    // 方案A：优先从 sessionStorage（Tab 隔离）获取当前角色身份，拼 token key
+    const currentRole = sessionStorage.getItem('currentRole')
+    const currentId = sessionStorage.getItem('currentId')
+    let token = null
+    if (currentRole && currentId) {
+      token = localStorage.getItem(`token_${currentRole}_${currentId}`)
+    } else {
+      // 降级：从 system-user 读（兼容旧 Tab / 未设置 sessionStorage 的场景）
+      const systemUser = JSON.parse(localStorage.getItem('system-user') || '{}')
+      token = localStorage.getItem(`token_${systemUser.role}_${systemUser.id}`)
+    }
     if (token) {
       config.headers['load_token'] = token
     }

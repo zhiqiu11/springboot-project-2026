@@ -2,8 +2,10 @@ package com.example.utils;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.RandomUtil;
+import com.example.entity.Goods;
+import com.example.entity.OrderDetail;
 import com.example.entity.Orders;
-import com.example.utils.RedisUtils;
+import com.example.common.enums.OrderStatusEnum;
 
 import java.util.Date;
 import java.util.List;
@@ -74,4 +76,26 @@ public class OrderUtils {
     public static String getOrderCacheKey(Integer orderId) {
         return ORDER_CACHE_PREFIX + orderId;
     }//预留方法，后续可能需要根据订单详情缓存
+
+    // ==================== 订单创建通用工具方法 ====================
+
+    /**
+     * 填充订单基础信息（订单编号、创建时间、状态）
+     */
+    public static void fillOrderBaseInfo(Orders orders) {
+        orders.setOrderNo(generateOrderNo());
+        orders.setTime(DateUtil.now());
+        orders.setStatus(OrderStatusEnum.WAIT_PAY.getDesc());
+    }
+
+    /**
+     * 构建单个订单详情（从 Goods 和购买数量填充商品快照信息）
+     */
+    public static void fillOrderDetail(OrderDetail detail, Goods goods, Integer orderId) {
+        detail.setOrderId(orderId);
+        detail.setGoodsId(goods.getId());
+        detail.setGoodsName(goods.getName());
+        detail.setGoodsImg(goods.getImg());
+    }
+
 }

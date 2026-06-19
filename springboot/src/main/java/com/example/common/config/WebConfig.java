@@ -16,7 +16,8 @@ public class WebConfig implements WebMvcConfigurer {
                 .excludePathPatterns(
                         "/login",           // 登录
                         "/register",        // 注册
-                        "/files/**"         // 文件上传下载
+                        "/files/**",        // 文件上传下载
+                        "/goods/**"         // 商品接口（测试用）
                 );//除了登录接口和注册接口，其他接口都需要登录校验，即登录后才能访问！
     }
 }

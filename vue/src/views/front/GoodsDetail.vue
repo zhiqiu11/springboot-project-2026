@@ -22,11 +22,48 @@
         </div>
         <!-- 第二行商品市场情况 -->
         <div style="margin-bottom: 20px;">
-          <!-- 左边商品价格 -->
-          <span style="font-size: 20px;color: red;font-weight: bolder">¥</span><b style="color: red;font-size: 25px">{{data.goods.price}}</b>
-          <!-- 右边商品销量和库存 -->
-          <span style="margin-left: 5px;color: grey;">累计销量：{{data.goods.saleCount}}</span>
-          <span style="margin-left: 20px;color: grey;">库存：{{data.goods.store}}</span>
+          <!-- ===== 外层容器：渐变背景 + 保留原有布局 ===== -->
+          <!-- 秒杀商品：棕色渐变 -->
+          <div v-if="data.goods.hasFlash === '是'"
+               style="background-image: linear-gradient(to right, #85411f, #2c1e1e);
+              padding: 12px 16px; border-radius: 8px;
+              display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <!-- 价格部分（保留原有大红色字体） -->
+            <span style="font-size: 20px; color: white; font-weight: bolder;">¥</span>
+            <b style="font-size: 25px; color: white;">{{ data.goods.flashPrice }}</b>
+            <!-- 原价（灰色删除线） -->
+            <span style="font-size: 16px; color: rgba(255,255,255,0.7); text-decoration: line-through; margin-left: 5px;">
+      原价 ¥{{ data.goods.price }}
+    </span>
+            <!-- 销量和库存（保留原有灰色，但在白色背景上可能看不清，改成浅灰色） -->
+            <span style="color: rgba(255,255,255,0.9); margin-left: auto;">累计销量：{{ data.goods.saleCount }}</span>
+            <span style="color: rgba(255,255,255,0.9);">库存：{{ data.goods.store }}</span>
+          </div>
+
+          <!-- 团购商品：红色渐变 -->
+          <div v-else-if="data.goods.hasGroup === '是'"
+               style="background-image: linear-gradient(to right, #f83939, #f52593);
+              padding: 12px 16px; border-radius: 8px;
+              display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span style="font-size: 20px; color: white; font-weight: bolder;">¥</span>
+            <b style="font-size: 25px; color: white;">{{ data.goods.groupPrice }}</b>
+            <span style="font-size: 16px; color: rgba(255,255,255,0.7); text-decoration: line-through; margin-left: 5px;">
+      原价 ¥{{ data.goods.price }}
+    </span>
+            <span style="color: rgba(255,255,255,0.9); margin-left: auto;">累计销量：{{ data.goods.saleCount }}</span>
+            <span style="color: rgba(255,255,255,0.9);">库存：{{ data.goods.store }}</span>
+          </div>
+
+          <!-- 普通商品：保持原有的纯红色大字风格（无渐变） -->
+          <div v-else
+               style="background-image: linear-gradient(to right, #169823, #33c3ba);
+              padding: 12px 16px; border-radius: 8px;
+              display: flex; align-items: center; flex-wrap: wrap; gap: 10px;">
+            <span style="font-size: 20px; color: white; font-weight: bolder;">¥</span>
+            <b style="font-size: 25px; color: white;">{{ data.goods.price }}</b>
+            <span style="color: rgba(255,255,255,0.9); margin-left: auto;">累计销量：{{ data.goods.saleCount }}</span>
+            <span style="color: rgba(255,255,255,0.9);">库存：{{ data.goods.store }}</span>
+          </div>
         </div>
         <!-- 第三行商品描述 -->
         <div style="margin-bottom: 20px;">
@@ -36,7 +73,9 @@
         <div style="margin-bottom: 20px;">
           <el-input-number v-model="data.num" :min="1" :max="data.goods.store" style="width: 150px;height: 40px" />
           <el-button @click="addCart"  type="warning" style="margin-left: 10px;height: 40px;">加入购物车</el-button>
-          <el-button @click="handleAddOrder" type="danger" style="margin-left: 10px;height: 40px;">立即购买</el-button>
+          <el-button @click="startOrder('flash')" type="danger" style="margin-left: 10px;height: 40px;" v-if="data.goods.hasFlash === '是'">立即秒杀</el-button>
+          <el-button @click="startOrder('group')" type="danger" style="margin-left: 10px;height: 40px;" v-else-if="data.goods.hasGroup === '是'">参与团购</el-button>
+          <el-button @click="startOrder('normal')" type="danger" style="margin-left: 10px;height: 40px;" v-else>立即购买</el-button>
         </div>
         <!-- 第五行购买简介 -->
         <div style="margin-top: 10px; color: #666;">校园小卖部销售并发货的商品，由小卖部提供发票和相应的售后服务，请您放心购买</div>
@@ -128,6 +167,7 @@ const data = reactive({
   userCollect: {},
   form: {},
   formVisible: false,
+  orderType: null,  // 'flash' | 'group' | 'normal' —— 标记当前订单类型
   rules: {
     deliverType: [{ required: true, message: '请选择配送类型', trigger: 'change' }],
     address: [{ required: true, message: '请输入收获地址', trigger: 'blur' }]
@@ -150,20 +190,28 @@ const loadComment = () => {
 loadComment()
 
 
-// 点击购买时的弹窗
-const handleAddOrder = () => {
+// 统一下单入口：秒杀/团购/普通都先打开配送弹窗
+const startOrder = (type) => {
+  data.orderType = type
   data.formVisible = true
   data.form = {}
 }
 
-// 单个下单
+// 弹窗确认按钮——根据 orderType 调用不同接口
 const addOrder = () => {
   formRef.value.validate(valid => {
     if (valid) {
-      // 检查配送类型是否选择
       data.form.userId = data.user.id
       data.form.cartList = [{goodsId: data.id, num: data.num}]
-      request.post('/orders/add', data.form).then(res => {
+
+      let url = '/orders/add'         // 默认：普通下单 / 团购
+      if (data.orderType === 'flash') {
+        url = '/orders/addFlashOrder' // 秒杀接口
+      } else if (data.orderType === 'group') {
+        url = '/orders/addGroupOrder' // 团购接口
+      }
+
+      request.post(url, data.form).then(res => {
         if (res.code === '200') {
           ElMessage.success('下单成功')
           data.formVisible = false

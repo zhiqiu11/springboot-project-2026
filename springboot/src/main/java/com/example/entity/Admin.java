@@ -17,6 +17,8 @@ public class Admin extends Account {
     private String avatar;
     /** 角色标识 */
     private String role;
+    /** Token */
+    private String token;
 
     @Override
     public Integer getId() {
@@ -76,5 +78,13 @@ public class Admin extends Account {
     @Override
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
     }
 }

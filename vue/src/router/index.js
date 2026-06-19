@@ -38,11 +38,13 @@ const router = createRouter({
         { path: 'userRecharge', component: () => import('@/views/front/UserRecharge.vue')},
         { path: 'cart', component: () => import('@/views/front/Cart.vue')},
         { path: 'userOrders', component: () => import('@/views/front/UserOrders.vue')},
-        { path: 'userComment', component: () => import('@/views/front/UserComment.vue')}
+        { path: 'userComment', component: () => import('@/views/front/UserComment.vue')},
+        { path: 'flash', component: () => import('@/views/front/Flash.vue')}
       ]
     },
     { path: '/login', component: () => import('@/views/Login.vue') },
-    { path: '/register', component: () => import('@/views/Register.vue') }
+    { path: '/register', component: () => import('@/views/Register.vue') },
+    { path: '/ordersDetail', component: () => import('@/views/OrdersDetail.vue') }
   ]
 })
 

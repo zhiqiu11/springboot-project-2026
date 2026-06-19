@@ -1,10 +1,9 @@
 package com.example.service;
 
-import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
+import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
-import com.example.entity.Admin;
 import com.example.entity.User;
 import com.example.exception.CustomException;
 import com.example.mapper.UserMapper;
@@ -16,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.function.BiFunction;
 
 
 @Service
@@ -57,7 +55,7 @@ public class UserService {
             //默认姓名
             user.setName(user.getName());
         }
-        user.setRole("普通用户");//默认用户的角色
+        user.setRole(RoleEnum.USER.name());//默认用户的角色
         user.setAccount(BigDecimal.ZERO);//默认账户余额(这里需要转换sql和后端Java“0”的类型)
         userMapper.insert(user);
     }
@@ -88,7 +86,7 @@ public class UserService {
         // 获取当前登录用户
         User loginUser = SaUtils.getLoginUser();
         // 如果是普通用户，需要验证原密码；如果是管理员，不需要验证
-        if (loginUser != null && "普通用户".equals(loginUser.getRole())) {
+        if (loginUser != null && RoleEnum.USER.name().equals(loginUser.getRole())) {
             // 验证原密码
             if (!account.getPassword().equals(dbUser.getPassword())) {
                 throw new CustomException("原密码错误");

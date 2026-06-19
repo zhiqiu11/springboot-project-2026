@@ -2,9 +2,7 @@ package com.example.service;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.util.ObjectUtil;
-import com.example.entity.Account;
 import com.example.entity.Goods;
-import com.example.exception.CustomException;
 import com.example.mapper.CartMapper;
 import com.example.mapper.GoodsMapper;
 import com.example.utils.RedisUtils;
@@ -14,6 +12,8 @@ import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -101,6 +101,24 @@ public class GoodsService {
     public PageInfo<Goods> selectPage(Goods goods, Integer pageNum, Integer pageSize) {
         PageHelper.startPage(pageNum, pageSize);
         List<Goods> list = goodsMapper.selectAll(goods);
+        calculateLastTime(list);
         return PageInfo.of(list);
     }
+
+    private void calculateLastTime(List<Goods> list) {
+        for (Goods dbGoods : list) {
+            // 计算出该秒杀商品剩余的时间（秒）
+            if (("是").equals(dbGoods.getHasFlash()) && ObjectUtil.isNotEmpty(dbGoods.getFlashTime())) {
+                try {
+                    long now = System.currentTimeMillis();
+                    Date end = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dbGoods.getFlashTime());
+                    long gap = (end.getTime() - now) / 1000;
+                    dbGoods.setMaxTime(Math.max(gap, 0));
+                } catch (ParseException e) {
+                    dbGoods.setMaxTime(0L);
+                }
+            }
+        }
+    }
+
 }

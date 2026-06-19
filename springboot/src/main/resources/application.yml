@@ -55,4 +55,4 @@ sa-token:
   # 是否输出操作日志
   is-log: true
   is-read-header: true    # 是否从请求头读取 token
-  is-read-cookie: true    # 是否从 Cookie 读取 token
+  is-read-cookie: false    # 是否从 Cookie 读取 token

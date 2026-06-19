@@ -1,6 +1,7 @@
 package com.example.service;
 
 import cn.hutool.core.util.ObjectUtil;
+import com.example.common.enums.RoleEnum;
 import com.example.entity.Account;
 import com.example.entity.Admin;
 import com.example.exception.CustomException;
@@ -35,7 +36,7 @@ public class AdminService {
         if (ObjectUtil.isEmpty(admin.getName())) {
             admin.setName(admin.getUsername());
         }//业务代码，进行一些逻辑判断。
-        admin.setRole("管理员");
+        admin.setRole(RoleEnum.ADMIN.name());
         adminMapper.insert(admin);
     }
 

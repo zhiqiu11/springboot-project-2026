@@ -24,10 +24,10 @@
               <el-input-number @click="changeNum(scope.row)" v-model="scope.row.num" type="number" :min="1" />
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="160">
+          <el-table-column label="操作" align="center" width="250">
             <template #default="scope">
-              <el-button type="primary" @click="handleEdit(scope.row)">编辑</el-button>
-              <el-button type="danger" @click="handleDelete(scope.row)">删除</el-button>
+              <el-button type="primary" style="text-align: center" @click="handleEdit(scope.row)">立即下单</el-button>
+              <el-button type="danger" style="text-align: center" @click="handleDelete(scope.row)">删除商品</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -35,7 +35,7 @@
       <!-- 第二行：总价格和下单按钮 -->
       <div style="text-align: right; margin-top: 20px; font-size: 20px">总价格：
         <b style="color: red; display: inline-block; min-width: 60px; text-align: left">{{ data.total }} 元</b>
-        <div style="margin-top: 10px;padding: 20px"><el-button :disabled="data.total === 0" @click="handleAddOrder" type="danger">立即下单</el-button></div>
+        <div style="margin-top: 10px;padding: 20px"><el-button :disabled="data.total === 0" @click="handleAddOrder" type="danger">批量下单</el-button></div>
       </div>
     </div>
 
@@ -161,6 +161,7 @@ load()
 // 编辑
 const handleEdit = (row) => {
   data.form = JSON.parse(JSON.stringify(row))
+  data.selectedRows = [row]
   data.formVisible = true
 }
 

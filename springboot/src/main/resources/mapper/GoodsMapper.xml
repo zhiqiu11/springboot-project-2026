@@ -11,12 +11,16 @@
             <if test="name != null"> and `goods`.name like concat('%', #{name}, '%')</if>
             <if test="categoryId != null"> and `goods`.category_id = #{categoryId}</if>
             <if test="status != null"> and `goods`.status = #{status}</if>
+            <if test="hasFlash != null"> and `goods`.has_flash = #{hasFlash}</if>
+            <if test="hasGroup != null"> and `goods`.has_group = #{hasGroup}</if>
         </where>
         order by `goods`.id desc
     </select>
 
     <select id="selectById" resultType="com.example.entity.Goods">
-        select * from `goods` where id = #{id}
+        select goods.*, category.name categoryName from goods
+        left join category on goods.category_id = category.id
+        where goods.id = #{id}
     </select>
 
     <delete id="deleteById">
@@ -39,6 +43,12 @@
             <if test="saleCount != null">sale_count,</if>
             <if test="time != null">time,</if>
             <if test="recommend != null">recommend,</if>
+            <!-- ====== 新增秒杀/团购字段更新 ====== -->
+            <if test="hasFlash != null">has_flash,</if>
+            <if test="hasGroup != null">has_group,</if>
+            <if test="flashNum != null">flash_num,</if>
+            <if test="flashPrice != null">flash_price,</if>
+            <if test="flashTime != null">flash_time,</if>
         </trim>
         values
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -55,6 +65,12 @@
             <if test="saleCount != null">#{saleCount},</if>
             <if test="time != null">#{time},</if>
             <if test="recommend != null">#{recommend},</if>
+            <!-- ====== 新增秒杀/团购字段更新 ====== -->
+            <if test="hasFlash != null">#{hasFlash},</if>
+            <if test="hasGroup != null">#{hasGroup},</if>
+            <if test="flashNum != null">#{flashNum},</if>
+            <if test="flashPrice != null">#{flashPrice},</if>
+            <if test="flashTime != null">#{flashTime},</if>
         </trim>
     </insert>
 
@@ -99,6 +115,22 @@
             </if>
             <if test="recommend != null">
                 recommend = #{recommend},
+            </if>
+             <!-- ====== 新增秒杀/团购字段更新 ====== -->
+            <if test="hasFlash != null">
+                has_flash = #{hasFlash},
+            </if>
+            <if test="hasGroup != null">
+                has_group = #{hasGroup},
+            </if>
+            <if test="flashNum != null">
+                flash_num = #{flashNum},
+            </if>
+            <if test="flashPrice != null">
+                flash_price = #{flashPrice},
+            </if>
+            <if test="flashTime != null">
+                flash_time = #{flashTime},
             </if>
         </set>
         where id = #{id}
