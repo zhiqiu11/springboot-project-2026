@@ -64,7 +64,7 @@
         <el-table-column prop="deliver" label="配送信息" width="150px"></el-table-column>
         <el-table-column label="订单操作" align="center" width="250">
           <template #default="scope">
-            <el-button @click="handleCancel(scope.row)" type="danger" v-if="scope.row.status !== '已完成' && scope.row.status !== '已取消'" >取消订单</el-button>
+            <el-button @click="handleCancel(scope.row)" type="danger" v-if="scope.row.status !== '已完成' && scope.row.status !== '已取消' && scope.row.status !== '已退款'" >取消订单</el-button>
             <el-button @click="handlePay(scope.row)" type="danger" v-if="scope.row.status === '待支付'" >前去付款</el-button>
             <el-button @click="handleConfirm(scope.row)" type="primary" v-if="scope.row.status === '已出货' || scope.row.status === '已配送'">确认收货</el-button>
           </template>

@@ -7,7 +7,7 @@
     <div class="card">
       <el-row :gutter="10">
         <el-col :span="5" v-for="item in data.goodsData" style="margin-bottom: 10px">
-          <div v-if="item.maxTime > 0">
+          <div>
             <img :src="item.img" alt="" style="width: 100%; height: 235px; border: 1px solid #cccccc; border-radius: 10px">
             <div class="overflow" style="font-size: 17px; font-weight: bold; color: #333333; margin-top: 10px">{{ item.name }}</div>
             <div style="margin-top: 5px; color: #faa303">团购倒计时：{{ item.hour }}:{{ item.minutes }}:{{ item.seconds }}:{{ item.flashDown }}</div>
@@ -58,6 +58,9 @@ const load = () => {
     data.total = res.data.total
     data.goodsData.forEach(item => {
       item.flashDown = 9
+      if (!item.maxTime || item.maxTime <= 0) {
+        item.maxTime = 86400
+      }
     })
     data.timer = setInterval(flashDown, 100)
   })

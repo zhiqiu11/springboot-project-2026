@@ -105,4 +105,20 @@ public class OrdersController {
         return Result.success(page);
     }
 
+    /**
+     * 按商品ID查询活跃拼团列表
+     */
+    @GetMapping("/getActiveGroups")
+    public Result getActiveGroups(@RequestParam Integer goodsId) {
+        return Result.success(groupService.getActiveGroupsByGoodsId(goodsId));
+    }
+
+    /**
+     * 查询订单的拼团信息
+     */
+    @GetMapping("/getGroupInfo")
+    public Result getGroupInfo(@RequestParam Integer orderId) {
+        return Result.success(groupService.getGroupInfo(orderId));
+    }
+
 }

@@ -37,12 +37,16 @@ public class Goods {
     private String hasFlash;
     /**是否团购（是/否） */
     private String hasGroup;      //
+    /**团购价格 */
+    private BigDecimal groupPrice;
     /**秒杀剩余名额 */
     private Integer flashNum;
     /**秒杀价格 */
     private BigDecimal flashPrice;
     /**秒杀结束时间 */
     private String flashTime;
+    /**团购结束时间 */
+    private String groupTime;
     // ========== 非数据库字段（仅前端展示） ==========
     private transient Long maxTime;        // 剩余秒数（用于倒计时）
 
@@ -183,6 +187,14 @@ public class Goods {
         this.flashNum = flashNum;
     }
 
+    public BigDecimal getGroupPrice() {
+        return groupPrice;
+    }
+
+    public void setGroupPrice(BigDecimal groupPrice) {
+        this.groupPrice = groupPrice;
+    }
+
     public BigDecimal getFlashPrice() {
         return flashPrice;
     }
@@ -197,6 +209,14 @@ public class Goods {
 
     public void setFlashTime(String flashTime) {
         this.flashTime = flashTime;
+    }
+
+    public String getGroupTime() {
+        return groupTime;
+    }
+
+    public void setGroupTime(String groupTime) {
+        this.groupTime = groupTime;
     }
 
     public Long getMaxTime() {

@@ -82,6 +82,8 @@ public class GoodsService {
         // 缓存未命中，查数据库
         Goods goods = goodsMapper.selectById(id);
         if (goods != null) {
+            // 计算秒杀剩余时间（与 selectPage 逻辑一致）
+            calculateLastTime(List.of(goods));
             // 写入缓存，设置过期时间为1小时（可根据实际情况调整）
             redisUtils.set(cacheKey, goods, 1, TimeUnit.HOURS);
         }
@@ -107,17 +109,29 @@ public class GoodsService {
 
     private void calculateLastTime(List<Goods> list) {
         for (Goods dbGoods : list) {
-            // 计算出该秒杀商品剩余的时间（秒）
+            long maxTime = 0L;
+            // 秒杀：计算 flashTime 剩余秒数
             if (("是").equals(dbGoods.getHasFlash()) && ObjectUtil.isNotEmpty(dbGoods.getFlashTime())) {
-                try {
-                    long now = System.currentTimeMillis();
-                    Date end = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(dbGoods.getFlashTime());
-                    long gap = (end.getTime() - now) / 1000;
-                    dbGoods.setMaxTime(Math.max(gap, 0));
-                } catch (ParseException e) {
-                    dbGoods.setMaxTime(0L);
-                }
+                long gap = parseRemainSeconds(dbGoods.getFlashTime());
+                if (gap > maxTime) maxTime = gap;
             }
+            // 团购：计算 groupTime 剩余秒数
+            if (("是").equals(dbGoods.getHasGroup()) && ObjectUtil.isNotEmpty(dbGoods.getGroupTime())) {
+                long gap = parseRemainSeconds(dbGoods.getGroupTime());
+                if (gap > maxTime) maxTime = gap;
+            }
+            dbGoods.setMaxTime(maxTime);
+        }
+    }
+
+    private long parseRemainSeconds(String timeStr) {
+        try {
+            long now = System.currentTimeMillis();
+            Date end = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(timeStr);
+            long gap = (end.getTime() - now) / 1000;
+            return Math.max(gap, 0);
+        } catch (ParseException e) {
+            return 0L;
         }
     }
 

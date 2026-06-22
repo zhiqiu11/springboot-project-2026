@@ -39,7 +39,8 @@ const router = createRouter({
         { path: 'cart', component: () => import('@/views/front/Cart.vue')},
         { path: 'userOrders', component: () => import('@/views/front/UserOrders.vue')},
         { path: 'userComment', component: () => import('@/views/front/UserComment.vue')},
-        { path: 'flash', component: () => import('@/views/front/Flash.vue')}
+        { path: 'flash', component: () => import('@/views/front/Flash.vue')},
+        { path: 'group', component: () => import('@/views/front/Group.vue')}
       ]
     },
     { path: '/login', component: () => import('@/views/Login.vue') },

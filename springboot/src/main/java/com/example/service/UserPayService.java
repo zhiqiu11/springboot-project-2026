@@ -22,6 +22,8 @@ public class UserPayService {
     private RedisUtils redisUtils;
     @Resource
     private OrdersMapper ordersMapper;
+    @Resource
+    private GroupService groupService;
 
     // pay(Orders orders) 方法执行：
     // 1. 查询订单，校验状态是否为"待支付"
@@ -44,11 +46,16 @@ public class UserPayService {
             // 3. 扣减用户余额
             user.setAccount(user.getAccount().subtract(dbOrder.getTotal()));
             userMapper.updateById(user);
-            // 4. 更新订单状态为"待接单"
-            dbOrder.setStatus(OrderStatusEnum.WAIT_ACCEPT.getDesc());
-            ordersMapper.updateById(dbOrder);
-            // 5. 清除相关 Redis 缓存
-            // 清除用户订单列表缓存（确保数据一致性）
+            // 4. 如果是团购订单，先处理拼团逻辑（状态由 payGroupOrder 内部控制）
+            boolean isGroupOrder = groupService.payGroupOrder(dbOrder.getId());
+            // 5. 非团购订单直接改为"待接单"（团购订单状态已在 payGroupOrder 中设置）
+            if (!isGroupOrder) {
+                dbOrder.setStatus(OrderStatusEnum.WAIT_ACCEPT.getDesc());
+                ordersMapper.updateById(dbOrder);
+            }
+            // 6. 清除该订单的缓存（否则前端读到的还是旧的"待支付"状态）
+            redisUtils.delete(OrderUtils.getOrderCacheKey(dbOrder.getId()));
+            // 7. 清除用户订单列表缓存（确保数据一致性）
             if (dbOrder.getUserId() != null) {
                 OrderUtils.clearAllOrderCache(dbOrder.getUserId(), redisUtils);
             }

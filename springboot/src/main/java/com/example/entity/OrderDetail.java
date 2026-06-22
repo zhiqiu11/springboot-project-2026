@@ -18,6 +18,8 @@ public class OrderDetail {
     private String goodsName;
     /**商品单价 */
     private BigDecimal goodsPrice;
+    /**拼团订单ID */
+    private Integer groupOrderId;
 
     public Integer getId() {
         return id;
@@ -73,5 +75,13 @@ public class OrderDetail {
 
     public void setGoodsPrice(BigDecimal goodsPrice) {
         this.goodsPrice = goodsPrice;
+    }
+
+    public Integer getGroupOrderId() {
+        return groupOrderId;
+    }
+
+    public void setGroupOrderId(Integer groupOrderId) {
+        this.groupOrderId = groupOrderId;
     }
 }

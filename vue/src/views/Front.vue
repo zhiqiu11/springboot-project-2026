@@ -14,6 +14,7 @@
             <el-menu-item index="/front/goods">精选商品</el-menu-item>
             <el-menu-item index="/front/cart">购物车</el-menu-item>
             <el-menu-item index="/front/userOrders">商品订单</el-menu-item>
+            <el-menu-item index="/front/group">团购订单</el-menu-item>
             <el-menu-item index="/front/flash">秒杀专区</el-menu-item>
           </el-menu>
         </div>

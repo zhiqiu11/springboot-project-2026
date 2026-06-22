@@ -1,9 +1,11 @@
 package com.example.utils;
 
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -161,6 +163,18 @@ public class RedisUtils {
     }
 
     /**
+     * 原子性递增 Hash 字段值
+     *
+     * @param key     缓存键
+     * @param hashKey Hash 字段
+     * @param delta   增量
+     * @return 递增后的值
+     */
+    public Long hIncrBy(String key, String hashKey, long delta) {
+        return redisTemplate.opsForHash().increment(key, hashKey, delta);
+    }
+
+    /**
      * 分布式锁：设置值（如果键不存在）
      *
      * @param key     缓存键
@@ -171,5 +185,48 @@ public class RedisUtils {
      */
     public Boolean setIfAbsent(String key, Object value, long timeout, TimeUnit unit) {
         return redisTemplate.opsForValue().setIfAbsent(key, value, timeout, unit);
+    }
+
+    /**
+     * 获取键的剩余过期时间
+     *
+     * @param key  缓存键
+     * @param unit 时间单位
+     * @return 剩余时间，-1=未设置过期时间，-2=键不存在
+     */
+    public Long getExpire(String key, TimeUnit unit) {
+        return redisTemplate.getExpire(key, unit);
+    }
+
+    /**
+     * 尝试获取分布式锁
+     *
+     * @param lockKey 锁的 key
+     * @param value   锁的唯一标识（如 UUID），用于安全释放锁
+     * @param timeout 锁的超时时间（防止死锁）
+     * @param unit    时间单位
+     * @return true=获取锁成功，false=锁已被占用
+     */
+    public Boolean tryLock(String lockKey, String value, long timeout, TimeUnit unit) {
+        return redisTemplate.opsForValue().setIfAbsent(lockKey, value, timeout, unit);
+    }
+
+    /**
+     * 释放分布式锁（Lua 脚本保证原子性：校验 value 匹配后才删除）
+     *
+     * @param lockKey 锁的 key
+     * @param value   锁的唯一标识
+     * @return true=释放成功，false=锁不存在或 value 不匹配
+     */
+    public Boolean releaseLock(String lockKey, String value) {
+        String luaScript =
+            "if redis.call('get', KEYS[1]) == ARGV[1] then " +
+            "   return redis.call('del', KEYS[1]) " +
+            "else " +
+            "   return 0 " +
+            "end";
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>(luaScript, Long.class);
+        Long result = redisTemplate.execute(script, Collections.singletonList(lockKey), value);
+        return result != null && result == 1;
     }
 }

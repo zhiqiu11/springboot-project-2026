@@ -47,8 +47,10 @@
             <if test="hasFlash != null">has_flash,</if>
             <if test="hasGroup != null">has_group,</if>
             <if test="flashNum != null">flash_num,</if>
+            <if test="groupPrice != null">group_price,</if>
             <if test="flashPrice != null">flash_price,</if>
             <if test="flashTime != null">flash_time,</if>
+            <if test="groupTime != null">group_time,</if>
         </trim>
         values
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -69,8 +71,10 @@
             <if test="hasFlash != null">#{hasFlash},</if>
             <if test="hasGroup != null">#{hasGroup},</if>
             <if test="flashNum != null">#{flashNum},</if>
+            <if test="groupPrice != null">#{groupPrice},</if>
             <if test="flashPrice != null">#{flashPrice},</if>
             <if test="flashTime != null">#{flashTime},</if>
+            <if test="groupTime != null">#{groupTime},</if>
         </trim>
     </insert>
 
@@ -123,6 +127,9 @@
             <if test="hasGroup != null">
                 has_group = #{hasGroup},
             </if>
+            <if test="groupPrice != null">
+                group_price = #{groupPrice},
+            </if>
             <if test="flashNum != null">
                 flash_num = #{flashNum},
             </if>
@@ -131,6 +138,9 @@
             </if>
             <if test="flashTime != null">
                 flash_time = #{flashTime},
+            </if>
+            <if test="groupTime != null">
+                group_time = #{groupTime},
             </if>
         </set>
         where id = #{id}

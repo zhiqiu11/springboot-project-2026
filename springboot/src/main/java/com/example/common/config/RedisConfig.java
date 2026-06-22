@@ -41,9 +41,9 @@ public class RedisConfig {
         template.setKeySerializer(stringSerializer);
         template.setHashKeySerializer(stringSerializer);
 
-        // 设置值的序列化器（普通值和哈希值）
+        // 设置值的序列化器（普通值用 JSON，哈希值用 String 以支持 HINCRBY）
         template.setValueSerializer(jsonSerializer);
-        template.setHashValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(stringSerializer);
 
         // 完成配置初始化
         template.afterPropertiesSet();

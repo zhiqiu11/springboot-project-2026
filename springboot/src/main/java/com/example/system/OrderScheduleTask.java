@@ -1,5 +1,6 @@
 package com.example.system;
 
+import com.example.service.GroupService;
 import com.example.service.OrdersService;
 import jakarta.annotation.Resource;
 import org.slf4j.Logger;
@@ -16,12 +17,17 @@ public class OrderScheduleTask {
     @Resource
     private OrdersService ordersService;
 
-    @Scheduled(cron = "0 0/5 * * * ?")//cron表达式：0秒0分0时0天0周，即每分钟执行一次任务
+    @Resource
+    private GroupService groupService;
+
+    @Scheduled(cron = "0 0/5 * * * ?")//cron表达式：每5分钟执行一次任务
     public void cancelTimeoutOrders() {
         logger.info("定时任务：开始扫描超时订单");
         try {
-            //调用订单服务的取消超时订单方法
+            // 1. 处理超时未支付订单
             ordersService.cancelTimeoutOrders();
+            // 2. 处理超时拼团订单（Redis key已过期的"拼团中"订单，退款+取消）
+            groupService.cancelTimeoutGroupOrders();
             logger.info("定时任务：超时订单扫描完成");
         } catch (Exception e) {
             logger.error("定时任务：超时订单扫描失败", e);

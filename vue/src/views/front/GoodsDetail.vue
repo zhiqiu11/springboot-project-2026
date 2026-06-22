@@ -74,8 +74,29 @@
           <el-input-number v-model="data.num" :min="1" :max="data.goods.store" style="width: 150px;height: 40px" />
           <el-button @click="addCart"  type="warning" style="margin-left: 10px;height: 40px;">加入购物车</el-button>
           <el-button @click="startOrder('flash')" type="danger" style="margin-left: 10px;height: 40px;" v-if="data.goods.hasFlash === '是'">立即秒杀</el-button>
-          <el-button @click="startOrder('group')" type="danger" style="margin-left: 10px;height: 40px;" v-else-if="data.goods.hasGroup === '是'">参与团购</el-button>
+          <el-button @click="startOrder('group')" type="danger" style="margin-left: 10px;height: 40px;" v-else-if="data.goods.hasGroup === '是'">发起团购</el-button>
           <el-button @click="startOrder('normal')" type="danger" style="margin-left: 10px;height: 40px;" v-else>立即购买</el-button>
+        </div>
+        <!-- 活跃拼团列表（仅团购商品显示） -->
+        <div v-if="data.goods.hasGroup === '是' && data.activeGroups.length > 0" style="margin-bottom: 20px; background-color: #faf7f0; border-radius: 8px; padding: 12px 15px;min-height: 80px;">
+          <div v-for="g in data.activeGroups" :key="g.leaderOrderId" style="display: flex; align-items: center; padding: 8px 0; border-bottom: 1px dashed #f0e0e0;" :style="{'border-bottom-width': g === data.activeGroups[data.activeGroups.length - 1] ? 0 : '1px'}">
+            <!-- 成员头像 -->
+            <div style="display: flex; align-items: center; margin-right: 15px; position: relative;">
+              <img v-for="(m, mi) in g.members" :key="mi" :src="m.avatar" alt="" style="width: 36px; height: 36px; border-radius: 50%; border: 2px solid #fff;" :style="{ marginLeft: mi > 0 ? '-10px' : '0', position: 'relative', zIndex: g.members.length - mi }">
+              <div style="margin-left: 10px; color: grey;">正在拼团中</div>
+            </div>
+            <!-- 倒计时 -->
+            <span style="color: #faa303; margin-right: 15px; flex: 1;">倒计时:  {{ g.hour }}:{{ g.minutes }}:{{ g.seconds }}:{{ g.flashDown }}</span>
+            <!-- 加入按钮 -->
+            <el-button type="danger" style="background-color: #f52593; border: none;" @click="joinGroup(g.leaderOrderId)">立即参团</el-button>
+          </div>
+        </div>
+        <!-- 活跃秒杀倒计时（仅秒杀商品显示） -->
+        <div v-if="data.goods.hasFlash === '是'" style="display: flex;align-items: center;margin-bottom: 20px; background-color: #faf7f0; border-radius: 8px; padding: 12px 15px;min-height: 80px;">
+          <div style="display: flex;align-items: center;justify-content: space-between;width: 100%;font-size: 14px; font-weight: bold; color: #85411f;">
+            <span>🔥 {{data.goods.name}}正在秒杀中，快来购买吧</span>
+            <span style="color: red;">倒计时:  {{ data.flashHour }}:{{ data.flashMinutes }}:{{ data.flashSeconds }}:{{ data.flashDown }}</span>
+          </div>
         </div>
         <!-- 第五行购买简介 -->
         <div style="margin-top: 10px; color: #666;">校园小卖部销售并发货的商品，由小卖部提供发票和相应的售后服务，请您放心购买</div>
@@ -147,7 +168,7 @@
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { reactive, ref, onUnmounted } from 'vue'
 import router from "@/router";
 import request from "@/utils/request";
 import {ElMessage} from "element-plus";
@@ -168,6 +189,9 @@ const data = reactive({
   form: {},
   formVisible: false,
   orderType: null,  // 'flash' | 'group' | 'normal' —— 标记当前订单类型
+  activeGroups: [],
+  selectedGroupOrderId: null,
+  timer: null,
   rules: {
     deliverType: [{ required: true, message: '请选择配送类型', trigger: 'change' }],
     address: [{ required: true, message: '请输入收获地址', trigger: 'blur' }]
@@ -195,6 +219,7 @@ const startOrder = (type) => {
   data.orderType = type
   data.formVisible = true
   data.form = {}
+  data.selectedGroupOrderId = null  // 默认发起团购，不带 groupOrderId
 }
 
 // 弹窗确认按钮——根据 orderType 调用不同接口
@@ -202,7 +227,13 @@ const addOrder = () => {
   formRef.value.validate(valid => {
     if (valid) {
       data.form.userId = data.user.id
-      data.form.cartList = [{goodsId: data.id, num: data.num}]
+      data.form.cartList = [{goodsId: data.id, num: data.num, }]
+      // ========== 拼团时传 groupOrderId ==========
+      if (data.orderType === 'group' && data.selectedGroupOrderId) {
+        data.form.orderDetailList = [{groupOrderId: data.selectedGroupOrderId}]
+      } else {
+        data.form.orderDetailList = null
+      }
 
       let url = '/orders/add'         // 默认：普通下单 / 团购
       if (data.orderType === 'flash') {
@@ -293,9 +324,95 @@ const changeTab = (tabName) => {
   data.current = tabName
 }
 
+// 加入别人的拼团
+const joinGroup = (leaderOrderId) => {
+  data.selectedGroupOrderId = leaderOrderId
+  data.orderType = 'group'
+  data.formVisible = true
+  data.form = {}
+}
+
+// 查询当前商品的活跃拼团列表
+const loadActiveGroups = () => {
+  if (!data.id) return
+  request.get('/orders/getActiveGroups', { params: { goodsId: data.id } }).then(res => {
+    if (res.code === '200') {
+      data.activeGroups = (res.data || []).map(g => {
+        g.maxTime = g.remainSeconds ?? 0
+        g.flashDown = 9
+        return g
+      })
+      // 拼团数据加载完成后，如果没有定时器则启动
+      if (data.activeGroups.length > 0 && !data.timer) {
+        data.timer = setInterval(flashDown, 100)
+      }
+    }
+  })
+}
+
+// 100ms 定时刷新倒计时（对齐 Flash.vue 方案）
+const flashDown = () => {
+  let hasActive = false
+  // 秒杀倒计时
+  let maxTime = data.flashMaxTime
+  if (maxTime > 0) {
+    hasActive = true
+    let remain = Math.floor(maxTime % 3600)
+    data.flashHour = Math.floor(maxTime / 3600)
+    data.flashMinutes = Math.floor(remain / 60)
+    data.flashSeconds = Math.floor(remain % 60)
+    if (data.flashDown === 0) {
+      data.flashMaxTime--
+      data.flashDown = 9
+    } else {
+      data.flashDown--
+    }
+  }
+  // 拼团倒计时
+  data.activeGroups?.forEach(g => {
+    let maxTime = g.maxTime
+    if (maxTime > 0) {
+      hasActive = true
+      let remain = Math.floor(maxTime % 3600)
+      g.hour = Math.floor(maxTime / 3600)
+      g.minutes = Math.floor(remain / 60)
+      g.seconds = Math.floor(remain % 60)
+      if (g.flashDown === 0) {
+        g.maxTime--
+        g.flashDown = 9
+      } else {
+        g.flashDown--
+      }
+    }
+  })
+  // 全部倒计时结束后自动清除定时器，防止空转
+  if (!hasActive && data.timer) {
+    clearInterval(data.timer)
+    data.timer = null
+  }
+}
+onUnmounted(() => {
+  if (data.timer) clearInterval(data.timer)
+})
+
 const load = () => {
+  // 清除旧定时器
+  if (data.timer) clearInterval(data.timer)
   request.get('/goods/selectById/' + data.id).then(res => {
     data.goods = res.data
+    // 秒杀倒计时：直接用 flashTime 算剩余秒数
+    if (data.goods.hasFlash === '是' && data.goods.flashTime) {
+      const end = new Date(data.goods.flashTime.replace(/-/g, '/')).getTime()
+      const gap = Math.max(0, Math.floor((end - Date.now()) / 1000))
+      data.flashMaxTime = gap
+      data.flashDown = 9
+      if (data.timer) clearInterval(data.timer)
+      data.timer = setInterval(flashDown, 100)
+    }
+    // 如果是团购商品，加载活跃拼团列表（loadActiveGroups 内部会启动定时器）
+    if (data.goods.hasGroup === '是') {
+      loadActiveGroups()
+    }
   })
 }
 load()

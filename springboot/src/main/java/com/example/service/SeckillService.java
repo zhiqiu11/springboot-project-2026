@@ -2,6 +2,7 @@ package com.example.service;
 
 import cn.hutool.core.date.DateTime;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.example.entity.*;
 import com.example.exception.CustomException;
@@ -23,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 @Service
@@ -49,8 +49,6 @@ public class SeckillService implements InitializingBean {
     @Resource
     private UserMapper userMapper;
 
-    private static final ConcurrentHashMap<Integer, Object> orderMap = new ConcurrentHashMap<>();
-
     private RateLimiter limiter;
 
     private static final long timeoutMinutes = 30;
@@ -73,29 +71,41 @@ public class SeckillService implements InitializingBean {
         // 设置阻塞，限制秒杀请求
         limiter.acquire();
         User loginUser = SaUtils.getLoginUser();  // 获取当前登录的用户
-        // 采取分段锁   什么是分段锁  锁是业务编号   比如用户ID  比如订单编号
-        Object lock = orderMap.computeIfAbsent(loginUser.getId(), k -> new Object());
 
-        // 加锁  保证同一个人不能并发下单  同一时间只能下单一次
+        // 分布式锁：按用户 ID 加锁，保证同一个人不能并发下单
+        String lockKey = "lock:seckill:" + loginUser.getId();
+        String lockValue = IdUtil.simpleUUID();
+        boolean locked = false;
         try {
-            synchronized (lock) {
-                // 从 orders 中取出购物车列表
-                List<Cart> cartList = orders.getCartList();
-                if (cartList == null || cartList.isEmpty()) {
-                    throw new CustomException("购物车不能为空");
+            // 自旋等待获取锁，最多等 3 秒
+            long start = System.currentTimeMillis();
+            while (!(locked = redisUtils.tryLock(lockKey, lockValue, 10, TimeUnit.SECONDS))) {
+                if (System.currentTimeMillis() - start > 3000) {
+                    throw new CustomException("系统繁忙，请稍后重试");
                 }
-                // 秒杀只允许一次买一件，取第一个
-                Cart cart = cartList.getFirst();
-
-                // 构造 OrderDetail 对象
-                OrderDetail orderDetail = new OrderDetail();
-                orderDetail.setGoodsId(cart.getGoodsId());
-                orderDetail.setNum(cart.getNum());
-                doSeckill(orderDetail, orders, loginUser);
+                Thread.sleep(50);
             }
-        }
-        finally {
-            orderMap.remove(loginUser.getId());// 解锁
+
+            // 从 orders 中取出购物车列表
+            List<Cart> cartList = orders.getCartList();
+            if (cartList == null || cartList.isEmpty()) {
+                throw new CustomException("购物车不能为空");
+            }
+            // 秒杀只允许一次买一件，取第一个
+            Cart cart = cartList.getFirst();
+
+            // 构造 OrderDetail 对象
+            OrderDetail orderDetail = new OrderDetail();
+            orderDetail.setGoodsId(cart.getGoodsId());
+            orderDetail.setNum(cart.getNum());
+            doSeckill(orderDetail, orders, loginUser);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CustomException("系统繁忙，请稍后重试");
+        } finally {
+            if (locked) {
+                redisUtils.releaseLock(lockKey, lockValue);
+            }
         }
     }
 
@@ -146,19 +156,18 @@ public class SeckillService implements InitializingBean {
             if (!redisUtils.exists(stockKey)) {
                 redisUtils.setIfAbsent(stockKey, goods.getFlashNum(), timeoutMinutes, TimeUnit.MINUTES);
             }
-            
+            //防止重复秒杀
+            Boolean isExist = redisUtils.setIfAbsent(orderKey, "1", timeoutMinutes, TimeUnit.MINUTES);
+            if (!isExist) {
+                // 重复下单，此时还没扣库存，无需回滚
+                throw new CustomException("您已重复下单");
+            }
+
             Long remain = redisUtils.increment(stockKey, -orderDetail.getNum());
             if (remain < 0) {
                 // 库存不足，回滚事务
                 redisUtils.increment(stockKey, orderDetail.getNum());
                 throw new CustomException("秒杀商品已抢完");
-            }
-            //防止重复秒杀
-            Boolean isExist = redisUtils.setIfAbsent(orderKey, "1", timeoutMinutes, TimeUnit.MINUTES);
-            if (!isExist) {
-                // 重复下单，回滚事务
-                redisUtils.increment(stockKey, orderDetail.getNum());
-                throw new CustomException("您已重复下单");
             }
 
             // 更新秒杀额度、库存、销量
@@ -200,9 +209,11 @@ public class SeckillService implements InitializingBean {
                 OrderUtils.clearAllOrderCache(loginUser.getId(), redisUtils);
             }
         } catch (Exception e) {
-            // 异常时回滚所有 Redis 操作
-            redisUtils.increment(stockKey, orderDetail.getNum());
-            redisUtils.delete(orderKey);
+            // "重复下单"不需要回滚任何 Redis 操作（orderKey 是上一次请求写入的，不能删）
+            if (!"您已重复下单".equals(e.getMessage())) {
+                redisUtils.increment(stockKey, orderDetail.getNum());
+                redisUtils.delete(orderKey);
+            }
             throw e;
         }
     }

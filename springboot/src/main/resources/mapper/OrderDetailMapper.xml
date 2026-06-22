@@ -8,6 +8,7 @@
         select * from `order_detail`
         <where>
             <if test="orderId != null"> order_id = #{orderId}</if>
+            <if test="groupOrderId != null"> group_order_id = #{groupOrderId}</if>
         </where>
         order by id desc
     </select>
@@ -30,6 +31,7 @@
             <if test="goodsImg != null">goods_img,</if>
             <if test="goodsName != null">goods_name,</if>
             <if test="goodsPrice != null">goods_price,</if>
+            <if test="groupOrderId != null">group_order_id,</if>
         </trim>
         values
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -40,6 +42,7 @@
             <if test="goodsImg != null">#{goodsImg},</if>
             <if test="goodsName != null">#{goodsName},</if>
             <if test="goodsPrice != null">#{goodsPrice},</if>
+            <if test="groupOrderId != null">#{groupOrderId},</if>
         </trim>
     </insert>
 
@@ -66,6 +69,9 @@
             </if>
             <if test="goodsPrice != null">
                 goods_price = #{goodsPrice},
+            </if>
+            <if test="groupOrderId != null">
+                group_order_id = #{groupOrderId},
             </if>
         </set>
         where id = #{id}
