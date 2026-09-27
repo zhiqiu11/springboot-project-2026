@@ -67,6 +67,19 @@ services:
         limits:
           cpus: "1.0"
           memory: 1G
+  web:
+    build: ./vue
+    container_name: code2026-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - app
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
 
 # 具名 volume，数据存在 Docker 管理的位置
 volumes:
