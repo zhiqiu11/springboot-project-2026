@@ -1,0 +1,74 @@
+services:
+  # ============ MySQL ============
+  mysql:
+    image: mysql:8.0
+    container_name: code2026-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"      # 本地学习用，生产必须换强密码
+      MYSQL_DATABASE: code2026           # 首次启动时自动建库
+    volumes:
+      # 挂载初始化 SQL —— MySQL 镜像约定的固定目录，首次启动会自动执行
+      - ./init/code2026.sql:/docker-entrypoint-initdb.d/code2026.sql
+      # 数据持久化，容器删了数据还在
+      - mysql-data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      # 用 mysqladmin ping 判断"能连了"，而不是"进程起来了"
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-p123456"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s                  # 留出导入 188KB 数据的时间
+    restart: unless-stopped
+    # ⚠️ 故意不映射端口到宿主机：你本机 3306 已被 MySQL 9.7 占用，映射会冲突
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+
+  # ============ Redis ============
+  redis:
+    image: redis:7
+    container_name: code2026-redis
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    # 同理不映射端口，避免和你本机 Redis 冲突
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  # ============ 你的应用 ============
+  app:
+    build: ./springboot                  # 在 springboot 目录里找 Dockerfile
+    container_name: code2026-app
+    ports:
+      - "9090:9090"                      # 宿主机9090 -> 容器9090
+    environment:
+      # 关键：容器里的 localhost 指向容器自己，必须改成服务名
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/code2026?useUnicode=true&characterEncoding=utf-8&allowMultiQueries=true&useSSL=false&serverTimezone=GMT%2b8&allowPublicKeyRetrieval=true"
+      SPRING_DATA_REDIS_HOST: redis
+      # DeepSeek Key 从 .env 读，不写进代码库
+      SPRING_AI_OPENAI_APIKEY: ${DEEPSEEK_API_KEY}
+    volumes:
+      # FileController 写文件到 /app/files，挂出来才不会一重启就丢
+      - ./files:/app/files
+    depends_on:
+      mysql:
+        condition: service_healthy       # 等 MySQL 真的能连了再启动
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 1G
+
+# 具名 volume，数据存在 Docker 管理的位置
+volumes:
+  mysql-data:
+  redis-data:

@@ -1,0 +1,18 @@
+# IDE 配置
+.idea
+*.iml
+.vscode
+
+# 文档
+*.md
+
+# 源码：5 行版是"本地打包 + 容器只运行"，不需要源码
+# ⚠️ 以后改成"容器内编译"的多阶段构建时，这行必须删掉！
+src
+
+# target 里只留 jar，其余中间产物不发
+target/classes
+target/generated-sources
+target/maven-archiver
+target/maven-status
+target/*.original
